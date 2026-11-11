@@ -15,6 +15,7 @@ import re
 import sys
 import tempfile
 import traceback
+import calendar
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
@@ -579,7 +580,7 @@ class VentanaSoftwareFJ:
             lista, text="Actualizar lista", command=self._actualizar_servicios
         ).grid(row=1, column=0, sticky="e", pady=(8, 0))
 
-    # =========================================================================
+   # =========================================================================
     # PESTAÑA RESERVAS
     # =========================================================================
     def _construir_pestana_reservas(self) -> None:
@@ -601,7 +602,8 @@ class VentanaSoftwareFJ:
         self._crear_campo(
             formulario, 1, "Código servicio:", self._res_servicio
         )
-        self._crear_campo(formulario, 2, "Fecha (DD/MM/AAAA):", self._res_fecha)
+        campo_fecha = self._crear_campo(formulario, 2, "Fecha (DD/MM/AAAA):", self._res_fecha)
+        campo_fecha.bind("<Button-1>", self._mostrar_calendario)
         self._crear_campo(formulario, 3, "Hora (HH:MM):", self._res_hora)
         self._crear_campo(formulario, 4, "Cantidad:", self._res_cantidad)
         self._crear_campo(formulario, 5, "IVA (%):", self._res_iva)
@@ -668,6 +670,108 @@ class VentanaSoftwareFJ:
         ttk.Button(
             motivo, text="Cancelar seleccionada", command=self._cancelar_reserva
         ).pack(side="left")
+
+    def _mostrar_calendario(self, evento) -> None:
+        """Muestra un calendario emergente justo debajo del campo de fecha al hacer clic."""
+        if hasattr(self, "_popup_cal") and self._popup_cal.winfo_exists():
+            self._popup_cal.destroy()
+
+        try:
+            fecha_base = datetime.strptime(self._res_fecha.get().strip(), "%d/%m/%Y")
+        except ValueError:
+            fecha_base = datetime.now() + timedelta(days=1)
+
+        anio_actual = [fecha_base.year]
+        mes_actual = [fecha_base.month]
+
+        popup = tk.Toplevel(self._ventana)
+        self._popup_cal = popup
+        popup.wm_overrideredirect(True)
+        popup.configure(bg=self.COLOR_ENCABEZADO, padx=1, pady=1)
+
+        x = evento.widget.winfo_rootx()
+        y = evento.widget.winfo_rooty() + evento.widget.winfo_height() + 2
+        popup.geometry(f"+{x}+{y}")
+
+        contenedor = tk.Frame(popup, bg="white", padx=8, pady=8)
+        contenedor.pack(fill="both", expand=True)
+
+        barra_nav = tk.Frame(contenedor, bg="white")
+        barra_nav.pack(fill="x", pady=(0, 6))
+
+        lbl_mes_anio = tk.Label(
+            barra_nav, bg="white", fg=self.COLOR_ENCABEZADO, font=("Segoe UI", 9, "bold")
+        )
+
+        marco_dias = tk.Frame(contenedor, bg="white")
+        marco_dias.pack()
+
+        nombres_meses = [
+            "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+        ]
+
+        def seleccionar_dia(dia: int) -> None:
+            self._res_fecha.set(f"{dia:02d}/{mes_actual[0]:02d}/{anio_actual[0]}")
+            popup.destroy()
+
+        def dibujar_dias() -> None:
+            for widget in marco_dias.winfo_children():
+                widget.destroy()
+
+            lbl_mes_anio.config(text=f"{nombres_meses[mes_actual[0]]} {anio_actual[0]}")
+
+            for col, nombre in enumerate(["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"]):
+                tk.Label(
+                    marco_dias, text=nombre, bg="white", fg="#555555",
+                    font=("Segoe UI", 8, "bold"), width=3
+                ).grid(row=0, column=col, pady=(0, 3))
+
+            semanas = calendar.monthcalendar(anio_actual[0], mes_actual[0])
+            for fila, semana in enumerate(semanas, start=1):
+                for col, dia in enumerate(semana):
+                    if dia == 0:
+                        tk.Label(marco_dias, text="", bg="white", width=3).grid(row=fila, column=col)
+                    else:
+                        btn = tk.Button(
+                            marco_dias,
+                            text=str(dia),
+                            width=3,
+                            relief="flat",
+                            bg="#f0f4f8",
+                            fg=self.COLOR_TEXTO,
+                            activebackground=self.COLOR_ENCABEZADO,
+                            activeforeground="white",
+                            font=("Segoe UI", 8),
+                            command=lambda d=dia: seleccionar_dia(d),
+                        )
+                        btn.grid(row=fila, column=col, padx=1, pady=1)
+
+        def cambiar_mes(delta: int) -> None:
+            mes_actual[0] += delta
+            if mes_actual[0] > 12:
+                mes_actual[0] = 1
+                anio_actual[0] += 1
+            elif mes_actual[0] < 1:
+                mes_actual[0] = 12
+                anio_actual[0] -= 1
+            dibujar_dias()
+
+        def cambiar_anio(delta: int) -> None:
+            anio_actual[0] += delta
+            dibujar_dias()
+
+        tk.Button(barra_nav, text="«", relief="flat", bg="white", command=lambda: cambiar_anio(-1)).pack(side="left")
+        tk.Button(barra_nav, text="‹", relief="flat", bg="white", command=lambda: cambiar_mes(-1)).pack(side="left")
+        lbl_mes_anio.pack(side="left", expand=True)
+        tk.Button(barra_nav, text="›", relief="flat", bg="white", command=lambda: cambiar_mes(1)).pack(side="right")
+        tk.Button(barra_nav, text="»", relief="flat", bg="white", command=lambda: cambiar_anio(1)).pack(side="right")
+
+        dibujar_dias()
+
+        popup.bind("<Escape>", lambda e: popup.destroy())
+        popup.focus_set()
+        popup.bind("<FocusOut>", lambda e: popup.destroy() if popup.focus_get() is None else None)
 
     # =========================================================================
     # BARRA DE ESTADO
