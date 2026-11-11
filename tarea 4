@@ -1184,7 +1184,9 @@ class VentanaSoftwareFJ:
                 encoding="utf-8",
                 errors="replace",
             ) as archivo:
-                lineas = archivo.readlines()[-200:]
+                lineas = archivo.readlines()
+                # FILTRO AGREGADO: Busca la última vez que dice "iniciado" y corta la lista desde ahí
+                lineas = lineas[max([i for i, linea in enumerate(lineas) if "iniciado correctamente" in linea] + [0]):]
         except OSError as error:
             lineas = [f"No se pudo leer el archivo de logs:\n{error}\n"]
 
