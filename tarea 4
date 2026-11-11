@@ -4383,6 +4383,15 @@ def accion_procesar_reserva(sistema: SistemaGestionFJ) -> None:
     else:
         print(f"\n  [OK] Reserva procesada. Valor facturado: {formatear_moneda(total)}")
 
+def reporte_clientes_naturales(self) -> int:
+        """
+        Aporte de Kely: Cuenta cuántos clientes de tipo natural están 
+        registrados en el sistema para un reporte rápido en consola o GUI.
+        """
+        conteo = sum(1 for c in self._clientes if c.tipo == TipoCliente.NATURAL)
+        self._registro.info(f"Reporte generado: {conteo} clientes naturales registrados.")
+        return conteo
+
 
 def accion_demostracion(sistema: SistemaGestionFJ) -> None:
     """Ejecuta la demostración sobre una instancia nueva para no mezclar datos."""
