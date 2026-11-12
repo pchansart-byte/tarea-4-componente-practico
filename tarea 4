@@ -983,15 +983,13 @@ class VentanaSoftwareFJ:
         else:
             self._marco_asesoria.grid()
 
-        # Si el código está vacío, sugerimos uno libre para ese tipo de
-        # servicio (por ejemplo SRV-SALA-02). El usuario puede cambiarlo.
-        if not self._srv_codigo.get().strip():
-            prefijos = {
-                self.TIPO_SALA: "SRV-SALA",
-                self.TIPO_EQUIPO: "SRV-EQP",
-                self.TIPO_ASESORIA: "SRV-ASE",
-            }
-            self._srv_codigo.set(self._sistema.siguiente_codigo(prefijos[seleccion]))
+        # Actualiza inmediatamente el código libre según el tipo seleccionado.
+        prefijos = {
+            self.TIPO_SALA: "SRV-SALA",
+            self.TIPO_EQUIPO: "SRV-EQP",
+            self.TIPO_ASESORIA: "SRV-ASE",
+        }
+        self._srv_codigo.set(self._sistema.siguiente_codigo(prefijos[seleccion]))
 
     def _registrar_servicio(self) -> None:
         """Construye el servicio elegido y lo registra en el sistema."""
@@ -4383,8 +4381,8 @@ def accion_procesar_reserva(sistema: SistemaGestionFJ) -> None:
     else:
         print(f"\n  [OK] Reserva procesada. Valor facturado: {formatear_moneda(total)}")
 
-def reporte_clientes_naturales(self) -> int:
-        """
+def repote_clientes_naturales(self) -> int:
+        """r
         Aporte de Kely: Cuenta cuántos clientes de tipo natural están 
         registrados en el sistema para un reporte rápido en consola o GUI.
         """
